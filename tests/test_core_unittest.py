@@ -46,11 +46,25 @@ class TestVBLKouboCore(unittest.TestCase):
         self.assertNotIn("——", cleaned)
 
     def test_split_into_breath_chunks(self):
-        long_sentence = "这里是VBL，今天我们来看OpenAI最新发布的模型，重点是把电脑操作和软件工程放进同一个工作流。"
-        chunks = split_into_breath_chunks(long_sentence, max_chars=18)
-        self.assertGreaterEqual(len(chunks), 2)
-        for chunk in chunks:
-            self.assertLessEqual(len(chunk), 22)
+        # 逗号留在行内，只有句号/叹号/问号真正结束才断行
+        sentence_with_commas = "这里是VBL，今天我们来看最新发布的模型，重点是把电脑操作放进同一个工作流。"
+        chunks = split_into_breath_chunks(sentence_with_commas)
+        self.assertEqual(len(chunks), 1)
+        self.assertEqual(chunks[0], sentence_with_commas)
+
+        # 真正有多个结束标点的句子才切开
+        two_sentences = "第一句讲完了。第二句接着说！"
+        chunks_multi = split_into_breath_chunks(two_sentences)
+        self.assertEqual(len(chunks_multi), 2)
+        self.assertEqual(chunks_multi[0], "第一句讲完了。")
+        self.assertEqual(chunks_multi[1], "第二句接着说！")
+
+        # 超过上限且完全没有任何标点停顿的超长句才会被切开，且不自行补逗号
+        super_long_no_punct = "这是一句完全没有任何标点符号而且长度超过了三十二个字甚至更长的极端测试文本用于验证切开逻辑"
+        chunks_long = split_into_breath_chunks(super_long_no_punct, max_chars=20)
+        self.assertGreater(len(chunks_long), 1)
+        for c in chunks_long:
+            self.assertNotIn("，", c)
 
     def test_calculate_spoken_metrics(self):
         text = "这里是VBL。本期看GPT六Astra。"

@@ -135,30 +135,55 @@ def clean_spoken_punctuation(text: str) -> str:
 
 def split_into_breath_chunks(text: str, max_chars: int = 18) -> List[str]:
     """
-    根据气口与最大字数切分长句。口播单句不宜超过 18 字
+    根据气口与最大字数切分长句。
+    一句真正结束才换行：只在句子结束标点（句号、问号、叹号、换行）处切分成行。
+    逗号是换气，留在这一行里。
+    只有长到会念嘴瓢、中间又没有任何停顿（无标点）的超长句，才在达到 max_chars 时切开，
+    切开时原样切断，绝不自己补逗号。
     """
-    # 先按自然标点断开
-    clauses = re.split(r'([。！？，\n])', text)
+    lines = text.splitlines()
     chunks = []
-    current = ""
 
-    for part in clauses:
-        if not part:
+    for line in lines:
+        line_str = line.strip()
+        if not line_str:
             continue
-        if part in "。！？，\n":
-            current += part
-            if len(current.strip()) > 0:
-                chunks.append(current.strip())
-            current = ""
-        else:
-            if len(current) + len(part) > max_chars and current:
-                chunks.append(current.strip() + "，")
-                current = part
-            else:
-                current += part
 
-    if current.strip():
-        chunks.append(current.strip())
+        # 按句号、问号、叹号切分为真正结束的句子
+        sentence_parts = re.split(r'([。！？])', line_str)
+        current_sentence = ""
+
+        for part in sentence_parts:
+            if not part:
+                continue
+            if part in "。！？":
+                current_sentence += part
+                if current_sentence.strip():
+                    sent = current_sentence.strip()
+                    # 如果句子本身带标点（如逗号），留在一行内，由说话人自行换气
+                    # 只有整句超长且没有任何标点停顿，才强切防嘴瓢；切开时不补逗号
+                    if len(sent) > max_chars and not any(p in sent for p in "，, 、:：;；"):
+                        while len(sent) > max_chars:
+                            chunks.append(sent[:max_chars])
+                            sent = sent[max_chars:]
+                        if sent:
+                            chunks.append(sent)
+                    else:
+                        chunks.append(sent)
+                current_sentence = ""
+            else:
+                current_sentence += part
+
+        if current_sentence.strip():
+            sent = current_sentence.strip()
+            if len(sent) > max_chars and not any(p in sent for p in "，, 、:：;；"):
+                while len(sent) > max_chars:
+                    chunks.append(sent[:max_chars])
+                    sent = sent[max_chars:]
+                if sent:
+                    chunks.append(sent)
+            else:
+                chunks.append(sent)
 
     return [c for c in chunks if c.strip()]
 

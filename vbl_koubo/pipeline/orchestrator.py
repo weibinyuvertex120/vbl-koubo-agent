@@ -215,7 +215,7 @@ class KouboOrchestrator:
         spoken_text = normalize_numbers(clean_base)
         spoken_text = clean_spoken_punctuation(spoken_text)
 
-        # 3. 气口切分
+        # 3. 气口切分：真正一句说完才切行，逗号留在一行内
         raw_chunks = split_into_breath_chunks(spoken_text, max_chars=18)
         
         segments: List[ScriptSegment] = []

@@ -81,7 +81,7 @@ class TestPipeline(unittest.TestCase):
 
         long_text = "这是测试长草稿。" * 50  # 超过 300 字
         orch.generate_body(long_text, "开场", llm_callable=fake_llm, mode="auto")
-        self.assertIn("最高铁律：严禁删减原稿核心论据与结构", captured_prompt)
+        self.assertIn("绝对禁止将长视频粗暴压缩为内容梗概", captured_prompt)
         self.assertIn("成稿字数区间严格控制在", captured_prompt)
 
 
