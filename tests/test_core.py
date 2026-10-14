@@ -66,3 +66,9 @@ def test_list_skills():
     skills = list_available_skills()
     assert "vbl-rational" in skills
     assert "_template" not in skills  # 确保排除了模板目录
+
+def test_slugify_preserves_decomposed_unicode_characters():
+    from run import slugify
+
+    assert slugify('Cafe\u0301') == 'Café'
+

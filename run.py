@@ -15,6 +15,7 @@ import sys
 import argparse
 import datetime
 import re
+import unicodedata
 from pathlib import Path
 
 from vbl_koubo.engine.skill_loader import list_available_skills
@@ -24,7 +25,7 @@ from vbl_koubo.pipeline.orchestrator import KouboOrchestrator
 
 def slugify(text: str) -> str:
     """生成合规的目录 slug"""
-    slug = re.sub(r'[^\w\u4e00-\u9fa5]+', '-', text).strip('-')
+    slug = re.sub(r'[^\w\u4e00-\u9fa5]+', '-', unicodedata.normalize('NFC', text)).strip('-')
     return slug[:30] or "untitled"
 
 
