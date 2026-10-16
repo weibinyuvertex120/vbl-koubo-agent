@@ -84,6 +84,41 @@ class TestPipeline(unittest.TestCase):
         self.assertIn("绝对禁止将长视频粗暴压缩为内容梗概", captured_prompt)
         self.assertIn("成稿字数区间严格控制在", captured_prompt)
 
+    def test_proper_nouns_check_with_sample_input(self):
+        # 使用只读方式读取 sample_input.txt，不调用模型，纯函数测试
+        from pathlib import Path
+        from vbl_koubo.pipeline.checker import extract_proper_nouns, check_proper_nouns_preservation, run_quality_gate
+        
+        sample_file = Path("sample_input.txt")
+        source_text = sample_file.read_text(encoding="utf-8")
+        
+        # 验证通用动态提取：包含大写专名与连字符名，不含小写词组
+        extracted = extract_proper_nouns(source_text)
+        self.assertIn("HyperFrames", extracted)
+        self.assertIn("Agent-Reach", extracted)
+        self.assertIn("OpenCut", extracted)
+        self.assertIn("SaaS", extracted)
+
+        # 假成稿 1：拿掉 HyperFrames，必须红（判定失败，且指明丢失 HyperFrames）
+        fake_bad_draft = (
+            "欢迎收看本周开源软件汇总。今天介绍的工具是 HeyGen 开源的，"
+            "第二个是 Agent-Reach，第三个是 Impeccable，配合同一套 SaaS 模板，第四个是 OpenCut。"
+        )
+        res_bad = run_quality_gate(fake_bad_draft, source_text=source_text)
+        self.assertFalse(res_bad.passed)
+        self.assertTrue(any("HyperFrames" in v for v in res_bad.violations))
+
+        # 假成稿 2：保留了 HyperFrames是，保留了同一套 SaaS 模板，且包含全部原稿大写专名，必须绿
+        fake_good_draft = (
+            "欢迎收看本周开源软件汇总。第一个是 HyperFrames是很有用的工具，"
+            "第二个是 Agent-Reach，给你的 AI Agent 装上网络能力，去搜索 Reddit 等内容。"
+            "第三个是 Impeccable，配合同一套 SaaS 模板，使用 Inter 字体，结合 Skill、Commands、Detector 和 Hook 的组合。"
+            "第四个是 OpenCut，解决 CapCut 的问题，未来推出编辑器 API，基于 Rust 多端方案。"
+            "最后用 FFmpeg 渲染成 MP4、MOV，写 HTML 代码。这里是 VibeLearning。"
+        )
+        res_good = run_quality_gate(fake_good_draft, source_text=source_text)
+        self.assertTrue(res_good.passed, f"预期通过，实际违规: {res_good.violations}")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -188,10 +188,11 @@ class KouboOrchestrator:
         self,
         title: str,
         selected_hook: str,
-        body_text: str
+        body_text: str,
+        source_text: Optional[str] = None
     ) -> TeleprompterScript:
         """
-        后处理物理层：过筛禁词、数字发音汉化、长句切分、测算时长并组装提词器
+        后处理物理层：过筛禁词、比对原稿专名、数字发音汉化、长句切分、测算时长并组装提词器
         """
         # 1. 质量哨所检查
         hook_clean = selected_hook.strip()
@@ -208,7 +209,7 @@ class KouboOrchestrator:
             full_raw = body_clean
         else:
             full_raw = f"{hook_clean}\n{body_clean}"
-        gate_res: QualityCheckResult = run_quality_gate(full_raw)
+        gate_res: QualityCheckResult = run_quality_gate(full_raw, source_text=source_text)
         clean_base = gate_res.clean_text
 
         # 2. 物理层发音规范化与标点清理

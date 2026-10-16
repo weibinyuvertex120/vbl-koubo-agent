@@ -101,11 +101,12 @@ def main():
         target_duration=args.duration
     )
 
-    # 6. 物理层安全网转换与提词排版
+    # 6. 物理层安全网转换与提词排版（传入原稿进行通用专名留存核查）
     script = orchestrator.build_teleprompter_script(
         title=args.title,
         selected_hook=selected_hook,
-        body_text=body_text
+        body_text=body_text,
+        source_text=facts
     )
 
     # 7. 规范归档
